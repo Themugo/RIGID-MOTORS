@@ -1,6 +1,4 @@
 import { useEffect } from "react";
-import { useConvex, useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
 import {
   BrowserRouter,
   Routes,
@@ -8,61 +6,59 @@ import {
   Navigate,
 } from "react-router-dom";
 
-/**
- * SIMPLE PLACEHOLDER PAGES
- * (replace later with your real UI pages)
- */
-function Home() {
-  return <div style={{ padding: 20 }}>🏠 Home Page</div>;
-}
+import { useConvex, useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
 
-function Login() {
-  return <div style={{ padding: 20 }}>🔐 Login Page</div>;
-}
+/* =========================
+   PAGES
+========================= */
 
-function Dealer() {
-  return <div style={{ padding: 20 }}>🚗 Dealer Dashboard</div>;
-}
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import DealerDashboard from "./pages/DealerDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import SubscriptionPage from "./pages/SubscriptionPage";
+import CEOAnalytics from "./pages/CEOAnalytics";
 
-function Admin() {
-  return <div style={{ padding: 20 }}>🛠 Admin Panel</div>;
-}
+/* =========================
+   PROTECTED ROUTE
+========================= */
 
-function Loading() {
-  return <div style={{ padding: 20 }}>Loading...</div>;
-}
-
-/**
- * PROTECTED ROUTE WRAPPER
- */
 function ProtectedRoute({ user, role, children }) {
-  if (user === undefined) return <Loading />;
+  if (user === undefined) return <div>Loading...</div>;
   if (!user) return <Navigate to="/login" />;
-  if (role && user.role !== role) return <Navigate to="/" />;
+
+  if (role && user.role !== role) {
+    return <Navigate to="/" />;
+  }
+
   return children;
 }
+
+/* =========================
+   MAIN APP
+========================= */
 
 export default function App() {
   const convex = useConvex();
 
   /**
-   * 🔥 AUTO CREATE USER ON APP LOAD
-   * This fixes ALL login + RBAC issues permanently
+   * 👤 AUTO USER INIT (SAFE)
    */
   useEffect(() => {
-    const initUser = async () => {
+    const init = async () => {
       try {
         await convex.mutation(api.users.createUserIfNotExists);
       } catch (err) {
-        console.log("User init skipped:", err);
+        console.log("User init error:", err);
       }
     };
 
-    initUser();
+    init();
   }, [convex]);
 
   /**
-   * 👤 GET CURRENT USER (SAFE)
+   * 👤 CURRENT USER
    */
   const user = useQuery(api.users.getCurrentUser);
 
@@ -74,22 +70,38 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
 
-        {/* 🚗 DEALER DASHBOARD (PROTECTED) */}
+        {/* 💳 SUBSCRIPTIONS */}
+        <Route
+          path="/subscriptions"
+          element={<SubscriptionPage />}
+        />
+
+        {/* 🚗 DEALER DASHBOARD */}
         <Route
           path="/dealer"
           element={
             <ProtectedRoute user={user} role="dealer">
-              <Dealer />
+              <DealerDashboard />
             </ProtectedRoute>
           }
         />
 
-        {/* 🛠 ADMIN PANEL (PROTECTED) */}
+        {/* 🛠 ADMIN DASHBOARD */}
         <Route
           path="/admin"
           element={
             <ProtectedRoute user={user} role="admin">
-              <Admin />
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 📊 CEO ANALYTICS */}
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute user={user} role="admin">
+              <CEOAnalytics />
             </ProtectedRoute>
           }
         />
