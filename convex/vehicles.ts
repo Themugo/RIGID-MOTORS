@@ -1,47 +1,50 @@
-import { query, mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-export const list = query({
-  handler: async (ctx) => {
-    return await ctx.db.query("vehicles").collect();
-  },
-});
-
-export const add = mutation({
+// 🚗 CREATE VEHICLE (PROTECTED)
+export const createVehicle = mutation({
   args: {
     title: v.string(),
-    price: v.number(),
-    image: v.string(),
     make: v.string(),
     model: v.string(),
-    year: v.number(),
+    price: v.number(),
+    images: v.array(v.string()),
   },
+
   handler: async (ctx, args) => {
-    await ctx.db.insert("vehicles", args);
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), identity.email))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    // 🔐 RBAC CHECK
+    if (user.role !== "dealer" && user.role !== "admin") {
+      throw new Error("Only dealers can post vehicles");
+    }
+
+    return await ctx.db.insert("vehicles", {
+      ...args,
+      dealerId: user._id,
+      isFeatured: false,
+      createdAt: Date.now(),
+    });
   },
 });
 
-export const remove = mutation({
-  args: {
-    id: v.id("vehicles"),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.delete(args.id);
-  },
-});
+// 📦 GET VEHICLES (WITH FEATURED FIRST)
+export const listVehicles = query({
+  handler: async (ctx) => {
+    const vehicles = await ctx.db.query("vehicles").collect();
 
-export const update = mutation({
-  args: {
-    id: v.id("vehicles"),
-    title: v.optional(v.string()),
-    price: v.optional(v.number()),
-    image: v.optional(v.string()),
-    make: v.optional(v.string()),
-    model: v.optional(v.string()),
-    year: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const { id, ...fields } = args;
-    await ctx.db.patch(id, fields);
+    return vehicles.sort((a, b) => {
+      if (a.isFeatured && !b.isFeatured) return -1;
+      if (!a.isFeatured && b.isFeatured) return 1;
+      return b.createdAt - a.createdAt;
+    });
   },
 });
