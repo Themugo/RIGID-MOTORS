@@ -1,44 +1,31 @@
+import { useEffect } from "react";
+import { useConvex } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import BoostButton from "./BoostButton";
 import FeaturedBadge from "./FeaturedBadge";
 
-/**
- * 🚗 SINGLE VEHICLE CARD
- * Displays vehicle info + monetization controls
- */
-
 export default function VehicleCard({ vehicle }) {
+  const convex = useConvex();
+
+  // 📊 TRACK VIEW ON LOAD
+  useEffect(() => {
+    convex.mutation(api.analytics.trackEvent, {
+      vehicleId: vehicle._id,
+      type: "view",
+    });
+  }, [vehicle._id, convex]);
+
   return (
-    <div
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: 10,
-        padding: 16,
-        marginBottom: 12,
-        background: "#fff",
-      }}
-    >
-      {/* 🔥 FEATURED BADGE */}
+    <div style={{ border: "1px solid #ddd", padding: 16, marginBottom: 10 }}>
+      
       <FeaturedBadge vehicle={vehicle} />
 
-      {/* 🚗 VEHICLE INFO */}
-      <h2 style={{ margin: "8px 0" }}>{vehicle.title}</h2>
+      <h2>{vehicle.title}</h2>
 
-      <p>
-        <strong>Make:</strong> {vehicle.make}
-      </p>
+      <p>{vehicle.make} {vehicle.model}</p>
+      <p>KES {vehicle.price}</p>
 
-      <p>
-        <strong>Model:</strong> {vehicle.model}
-      </p>
-
-      <p>
-        <strong>Price:</strong> KES {vehicle.price}
-      </p>
-
-      {/* ⭐ BOOST BUTTON (MONETIZATION) */}
-      <div style={{ marginTop: 10 }}>
-        <BoostButton vehicleId={vehicle._id} />
-      </div>
+      <BoostButton vehicleId={vehicle._id} />
     </div>
   );
 }
