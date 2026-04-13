@@ -11,99 +11,71 @@ export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [tab, setTab] = useState("marketplace");
 
-  // FILTER STATES
-  const [search, setSearch] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [location, setLocation] = useState("");
-
   const user = getUser();
   const cars = getAllCars();
   const payments = getPayments();
 
   const featuredIds = payments.featured;
 
-  // FILTER LOGIC
-  const filteredCars = cars.filter((car) => {
-    const matchesSearch =
-      car.title.toLowerCase().includes(search.toLowerCase());
+  const featuredCars = cars.filter((c) => featuredIds.includes(c.id));
+  const normalCars = cars.filter((c) => !featuredIds.includes(c.id));
 
-    const matchesPrice =
-      !maxPrice || Number(car.price) <= Number(maxPrice);
-
-    const matchesLocation =
-      !location || car.location === location;
-
-    return matchesSearch && matchesPrice && matchesLocation;
-  });
-
-  const featuredCars = filteredCars.filter((c) =>
-    featuredIds.includes(c.id)
-  );
-
-  const normalCars = filteredCars.filter(
-    (c) => !featuredIds.includes(c.id)
+  const totalRevenue = payments.transactions.reduce(
+    (sum, t) => sum + t.amount,
+    0
   );
 
   return (
     <div style={styles.app}>
-      {/* ================= HERO ================= */}
-      <div style={styles.hero}>
-        <h1>🚗 Find Your Perfect Car</h1>
-        <p>Buy • Sell • Auction Cars Across Kenya</p>
-
-        {/* SEARCH BAR */}
-        <div style={styles.searchBar}>
-          <input
-            placeholder="Search (e.g. Prado, Mazda CX-5)"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={styles.input}
-          />
-
-          <input
-            placeholder="Max Price (KSh)"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-            style={styles.input}
-          />
-
-          <select
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            style={styles.input}
-          >
-            <option value="">All Locations</option>
-            <option value="Nairobi">Nairobi</option>
-            <option value="Mombasa">Mombasa</option>
-          </select>
-        </div>
-      </div>
 
       {/* ================= HEADER ================= */}
       <div style={styles.header}>
-        <h2>Rigid Motors</h2>
+        <div>
+          <h2 style={{ margin: 0 }}>🚗 Rigid Motors</h2>
+          <small style={{ color: "#9ca3af" }}>
+            Buy • Sell • Auction Cars in Kenya
+          </small>
+        </div>
 
-        {user ? (
-          <button onClick={() => logout() || location.reload()}>
-            Logout
-          </button>
-        ) : (
-          <button onClick={() => setShowLogin(true)}>
-            Login
-          </button>
-        )}
+        <div>
+          {user ? (
+            <button
+              style={styles.logout}
+              onClick={() => {
+                logout();
+                location.reload();
+              }}
+            >
+              Logout
+            </button>
+          ) : (
+            <button
+              style={styles.login}
+              onClick={() => setShowLogin(true)}
+            >
+              Login
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* LOGIN MODAL */}
+      {/* ================= LOGIN MODAL ================= */}
       {showLogin && (
         <div style={styles.modal}>
           <div style={styles.modalBox}>
-            <Login goToApp={() => setShowLogin(false)} />
+            <Login
+              goToApp={() => {
+                setShowLogin(false);
+              }}
+            />
+            <button onClick={() => setShowLogin(false)}>
+              Close
+            </button>
           </div>
         </div>
       )}
 
-      {/* NAV */}
+      {/* ================= NAV ================= */}
       <div style={styles.tabs}>
         <button onClick={() => setTab("marketplace")}>
           Marketplace
@@ -113,8 +85,16 @@ export default function App() {
         </button>
       </div>
 
-      {/* CONTENT */}
+      {/* ================= METRICS ================= */}
+      <div style={styles.metrics}>
+        <div style={styles.metricCard}>🚗 {cars.length} Cars</div>
+        <div style={styles.metricCard}>💰 KSh {totalRevenue}</div>
+        <div style={styles.metricCard}>🔥 {featuredCars.length}</div>
+      </div>
+
       <div style={styles.content}>
+
+        {/* ================= MARKETPLACE ================= */}
         {tab === "marketplace" && (
           <>
             <h3>🔥 Featured Cars</h3>
@@ -133,6 +113,7 @@ export default function App() {
           </>
         )}
 
+        {/* ================= AUCTIONS ================= */}
         {tab === "auctions" && <AuctionPanel />}
       </div>
     </div>
@@ -147,13 +128,21 @@ function CarCard({ car, user, featured }) {
 
       <h3>{car.title}</h3>
       <p>KSh {car.price}</p>
-      <p style={{ fontSize: 12 }}>{car.location || "Kenya"}</p>
 
       {featured && <p style={{ color: "gold" }}>⭐ Featured</p>}
 
-      <button style={styles.whatsapp}>
+      <button
+        style={styles.whatsapp}
+        onClick={() => trackWhatsApp(car.id)}
+      >
         💬 Contact Seller
       </button>
+
+      {!user && (
+        <p style={{ fontSize: 12, color: "#9ca3af" }}>
+          Login to bid or sell
+        </p>
+      )}
 
       {user?.role === "dealer" && !featured && (
         <button
@@ -163,7 +152,7 @@ function CarCard({ car, user, featured }) {
             alert("Boosted!");
           }}
         >
-          🔥 Boost
+          🔥 Boost Listing
         </button>
       )}
     </div>
@@ -174,30 +163,24 @@ function CarCard({ car, user, featured }) {
 const styles = {
   app: { background: "#0b1220", color: "white", minHeight: "100vh" },
 
-  hero: {
-    background: "#111827",
-    padding: 30,
-    textAlign: "center",
-  },
-
-  searchBar: {
-    display: "flex",
-    gap: 10,
-    marginTop: 15,
-    flexWrap: "wrap",
-    justifyContent: "center",
-  },
-
-  input: {
-    padding: 10,
-    borderRadius: 6,
-    border: "none",
-  },
-
   header: {
     display: "flex",
     justifyContent: "space-between",
-    padding: 15,
+    padding: 20,
+  },
+
+  login: {
+    background: "#2563eb",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+  },
+
+  logout: {
+    background: "red",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
   },
 
   modal: {
@@ -215,12 +198,25 @@ const styles = {
   modalBox: {
     background: "#111827",
     padding: 20,
+    borderRadius: 10,
   },
 
   tabs: {
     display: "flex",
     gap: 10,
     padding: 10,
+  },
+
+  metrics: {
+    display: "flex",
+    gap: 10,
+    padding: 10,
+  },
+
+  metricCard: {
+    background: "#111827",
+    padding: 10,
+    borderRadius: 8,
   },
 
   content: { padding: 15 },
