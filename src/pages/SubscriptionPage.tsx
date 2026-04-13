@@ -1,34 +1,48 @@
-import { useConvex, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { useState } from "react";
 
 export default function SubscriptionPage() {
-  const convex = useConvex();
-  const user = useQuery(api.subscriptions.getMySubscription);
+  const [loading, setLoading] = useState(false);
 
-  const upgrade = async (plan) => {
+  const pay = async (amount, plan) => {
+    setLoading(true);
+
     try {
-      await convex.mutation(api.subscriptions.upgradeSubscription, {
-        plan,
-        phone: user.phone,
+      const res = await fetch("http://localhost:4000/stkpush", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: "254712345678", // replace with real user phone later
+          amount,
+          accountReference: "subscription",
+        }),
       });
 
-      alert("Subscription updated!");
-    } catch (err) {
-      alert(err.message);
-    }
-  };
+      const data = await res.json();
+      console.log(data);
 
-  if (!user) return <div>Loading...</div>;
+      alert("📲 Complete payment on your phone");
+    } catch (err) {
+      alert("Payment failed");
+    }
+
+    setLoading(false);
+  };
 
   return (
     <div style={{ padding: 20 }}>
       <h1>💳 Subscription Plans</h1>
 
-      <p>Current Plan: {user.subscriptionPlan || "none"}</p>
+      <button disabled={loading} onClick={() => pay(500, "basic")}>
+        Basic - KES 500 / month
+      </button>
 
-      <button onClick={() => upgrade("basic")}>Basic - KES 500</button>
-      <button onClick={() => upgrade("pro")}>Pro - KES 1500</button>
-      <button onClick={() => upgrade("premium")}>Premium - KES 3000</button>
+      <button disabled={loading} onClick={() => pay(1500, "pro")}>
+        Pro - KES 1500 / month
+      </button>
+
+      <button disabled={loading} onClick={() => pay(3000, "premium")}>
+        Premium - KES 3000 / month
+      </button>
     </div>
   );
 }
