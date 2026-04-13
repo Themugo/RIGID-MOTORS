@@ -1,14 +1,31 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-// 🚗 CREATE VEHICLE (PROTECTED)
-export const createVehicle = mutation({
+/**
+ * 🚗 LIST VEHICLES (FEATURED FIRST)
+ */
+export const listVehicles = query({
+  handler: async (ctx) => {
+    const vehicles = await ctx.db.query("vehicles").collect();
+
+    return vehicles.sort((a, b) => {
+      const aActive = a.isFeatured && a.featuredUntil > Date.now();
+      const bActive = b.isFeatured && b.featuredUntil > Date.now();
+
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+
+      return b.createdAt - a.createdAt;
+    });
+  },
+});
+
+/**
+ * ⭐ BOOST VEHICLE (FEATURE AD)
+ */
+export const boostVehicle = mutation({
   args: {
-    title: v.string(),
-    make: v.string(),
-    model: v.string(),
-    price: v.number(),
-    images: v.array(v.string()),
+    vehicleId: v.id("vehicles"),
   },
 
   handler: async (ctx, args) => {
@@ -22,29 +39,40 @@ export const createVehicle = mutation({
 
     if (!user) throw new Error("User not found");
 
-    // 🔐 RBAC CHECK
-    if (user.role !== "dealer" && user.role !== "admin") {
-      throw new Error("Only dealers can post vehicles");
+    const vehicle = await ctx.db.get(args.vehicleId);
+    if (!vehicle) throw new Error("Vehicle not found");
+
+    // 🔐 ONLY OWNER OR ADMIN CAN BOOST
+    if (vehicle.dealerId !== user._id && user.role !== "admin") {
+      throw new Error("Not allowed to boost this vehicle");
     }
 
-    return await ctx.db.insert("vehicles", {
-      ...args,
-      dealerId: user._id,
-      isFeatured: false,
-      createdAt: Date.now(),
+    const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
+    await ctx.db.patch(args.vehicleId, {
+      isFeatured: true,
+      featuredUntil: Date.now() + SEVEN_DAYS,
     });
+
+    return { success: true };
   },
 });
 
-// 📦 GET VEHICLES (WITH FEATURED FIRST)
-export const listVehicles = query({
+/**
+ * ❌ REMOVE EXPIRED FEATURED ADS (AUTO CLEANUP)
+ */
+export const removeExpiredFeatured = mutation({
   handler: async (ctx) => {
     const vehicles = await ctx.db.query("vehicles").collect();
 
-    return vehicles.sort((a, b) => {
-      if (a.isFeatured && !b.isFeatured) return -1;
-      if (!a.isFeatured && b.isFeatured) return 1;
-      return b.createdAt - a.createdAt;
-    });
+    for (const v of vehicles) {
+      if (v.isFeatured && v.featuredUntil < Date.now()) {
+        await ctx.db.patch(v._id, {
+          isFeatured: false,
+        });
+      }
+    }
+
+    return { cleaned: true };
   },
 });
