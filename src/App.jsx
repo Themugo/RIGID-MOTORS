@@ -1,56 +1,46 @@
 import { useState } from "react";
 import Login from "./Login";
-import AuctionPanel from "./auction/AuctionPanel";
 
 import { getUser, logout } from "./auth/auth";
 import { getAllCars } from "./carsStore";
-import { featureCar, getPayments } from "./payments/payments";
+
+import AdminPanel from "./admin/AdminPanel";
+import AdsBoard from "./ads/AdsBoard";
+import AuctionPanel from "./auction/AuctionPanel";
 
 export default function App() {
   const [showLogin, setShowLogin] = useState(false);
-  const [tab, setTab] = useState("marketplace");
+  const [tab, setTab] = useState("home");
 
   const user = getUser();
   const cars = getAllCars();
-  const payments = getPayments();
-
-  const featuredIds = payments.featured;
 
   return (
     <div style={styles.app}>
-
-      {/* ===== TOP BRAND BAR ===== */}
-      <div style={styles.brandBar}>
+      {/* ===== HEADER ===== */}
+      <div style={styles.header}>
         <div>
           <h1 style={styles.logo}>🚗 RIGID MOTORS</h1>
           <p style={styles.slogan}>
-            Quality Cars. Trusted Deals. Kenyan Prices.
+            Buy • Sell • Auction Cars in Kenya
           </p>
         </div>
 
-        {user ? (
-          <button onClick={() => logout() || location.reload()}>
-            Logout
-          </button>
-        ) : (
-          <button onClick={() => setShowLogin(true)}>
-            Login
-          </button>
-        )}
-      </div>
-
-      {/* ===== HERO ===== */}
-      <div style={styles.hero}>
-        <div style={styles.overlay} />
-
-        <div style={styles.heroContent}>
-          <h2 style={styles.heroTitle}>
-            Find Your Dream Car Today
-          </h2>
-
-          <p style={styles.heroSub}>
-            Browse top vehicles across Nairobi & Mombasa
-          </p>
+        <div>
+          {user ? (
+            <button
+              onClick={() => {
+                logout();
+                location.reload();
+              }}
+            >
+              Logout ({user.role})
+            </button>
+          ) : (
+            <button onClick={() => setShowLogin(true)}>
+              Login
+            </button>
+          )}
         </div>
       </div>
 
@@ -65,47 +55,60 @@ export default function App() {
 
       {/* NAV */}
       <div style={styles.tabs}>
-        <button onClick={() => setTab("marketplace")}>
-          Marketplace
-        </button>
+        <button onClick={() => setTab("home")}>Home</button>
+        <button onClick={() => setTab("ads")}>Ads</button>
         <button onClick={() => setTab("auctions")}>
           Auctions
         </button>
+
+        {user?.role === "admin" && (
+          <button onClick={() => setTab("admin")}>
+            Admin
+          </button>
+        )}
       </div>
 
-      {/* CONTENT */}
-      <div style={styles.grid}>
-        {cars.map((car) => {
-          const featured = featuredIds.includes(car.id);
+      {/* ===== HERO ===== */}
+      {tab === "home" && (
+        <div style={styles.hero}>
+          <h2>Find Your Perfect Car</h2>
+        </div>
+      )}
 
-          return (
+      {/* ===== ADS ===== */}
+      {tab === "ads" && <AdsBoard />}
+
+      {/* ===== AUCTIONS ===== */}
+      {tab === "auctions" && <AuctionPanel />}
+
+      {/* ===== ADMIN (RBAC) ===== */}
+      {tab === "admin" && user?.role === "admin" && (
+        <AdminPanel />
+      )}
+
+      {/* ===== MARKETPLACE ===== */}
+      {tab === "home" && (
+        <div style={styles.grid}>
+          {cars.map((car) => (
             <div key={car.id} style={styles.card}>
               <img src={car.image} style={styles.image} />
 
               <h3>{car.title}</h3>
               <p>KSh {car.price.toLocaleString()}</p>
-              <p>{car.location}</p>
-
-              {featured && <p style={{ color: "gold" }}>⭐ Featured</p>}
 
               <button style={styles.whatsapp}>
                 Contact Seller
               </button>
 
-              {user?.role === "dealer" && !featured && (
-                <button
-                  style={styles.feature}
-                  onClick={() => featureCar(car.id)}
-                >
-                  Boost
+              {user?.role === "dealer" && (
+                <button style={styles.feature}>
+                  Boost Listing
                 </button>
               )}
             </div>
-          );
-        })}
-      </div>
-
-      {tab === "auctions" && <AuctionPanel />}
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -114,47 +117,27 @@ export default function App() {
 const styles = {
   app: { background: "#0b1220", color: "white" },
 
-  brandBar: {
+  header: {
     display: "flex",
     justifyContent: "space-between",
     padding: 20,
     borderBottom: "1px solid #1f2937",
   },
 
-  logo: {
-    fontSize: 28,
-    fontWeight: "bold",
-  },
+  logo: { fontSize: 28 },
 
-  slogan: {
-    color: "#9ca3af",
+  slogan: { color: "#9ca3af" },
+
+  tabs: {
+    display: "flex",
+    gap: 10,
+    padding: 10,
   },
 
   hero: {
-    height: 300,
-    backgroundImage:
-      "url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7')",
-    backgroundSize: "cover",
-  },
-
-  overlay: {
-    width: "100%",
-    height: "100%",
-    background: "rgba(0,0,0,0.6)",
-  },
-
-  heroContent: {
-    position: "relative",
-    top: -200,
+    padding: 40,
     textAlign: "center",
-  },
-
-  heroTitle: {
-    fontSize: 40,
-  },
-
-  heroSub: {
-    color: "#9ca3af",
+    fontSize: 30,
   },
 
   grid: {
@@ -181,7 +164,6 @@ const styles = {
     width: "100%",
     padding: 8,
     border: "none",
-    marginTop: 5,
   },
 
   feature: {
@@ -190,12 +172,6 @@ const styles = {
     padding: 8,
     border: "none",
     marginTop: 5,
-  },
-
-  tabs: {
-    display: "flex",
-    gap: 10,
-    padding: 10,
   },
 
   modal: {
