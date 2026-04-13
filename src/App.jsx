@@ -10,112 +10,26 @@ export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [tab, setTab] = useState("marketplace");
 
-  const [search, setSearch] = useState("");
-  const [price, setPrice] = useState("");
-  const [location, setLocation] = useState("");
-
   const user = getUser();
   const cars = getAllCars();
   const payments = getPayments();
 
   const featuredIds = payments.featured;
 
-  const filteredCars = cars.filter((car) => {
-    const s = car.title.toLowerCase().includes(search.toLowerCase());
-    const p = !price || car.price <= Number(price);
-    const l = !location || car.location === location;
-    return s && p && l;
-  });
-
-  const featured = filteredCars.filter((c) =>
-    featuredIds.includes(c.id)
-  );
-
-  const normal = filteredCars.filter(
-    (c) => !featuredIds.includes(c.id)
-  );
-
   return (
     <div style={styles.app}>
-      {/* HERO */}
-      <div style={styles.hero}>
-        <div style={styles.overlay} />
 
-        <div style={styles.heroContent}>
-          <p style={styles.topText}>
-            NORTHERN BYPASS • NAIROBI • JAPANESE IMPORTS
+      {/* ===== TOP BRAND BAR ===== */}
+      <div style={styles.brandBar}>
+        <div>
+          <h1 style={styles.logo}>🚗 RIGID MOTORS</h1>
+          <p style={styles.slogan}>
+            Quality Cars. Trusted Deals. Kenyan Prices.
           </p>
-
-          <h1 style={styles.heroTitle}>
-            Quality Cars,<br />
-            <span style={{ color: "#3b82f6" }}>
-              Kenyan Prices
-            </span>
-          </h1>
-
-          <p style={styles.heroSub}>
-            Reliable second-hand cars. Inspected. Ready.
-            No hidden costs.
-          </p>
-
-          <div style={styles.heroButtons}>
-            <button
-              style={styles.primaryBtn}
-              onClick={() =>
-                window.scrollTo({
-                  top: 700,
-                  behavior: "smooth",
-                })
-              }
-            >
-              Browse Stock
-            </button>
-
-            <button style={styles.secondaryBtn}>
-              📞 Call Us
-            </button>
-          </div>
-
-          {/* SEARCH */}
-          <div style={styles.searchBar}>
-            <input
-              placeholder="Search car..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={styles.input}
-            />
-
-            <input
-              placeholder="Max Price"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              style={styles.input}
-            />
-
-            <select
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              style={styles.input}
-            >
-              <option value="">All Locations</option>
-              <option value="Nairobi">Nairobi</option>
-              <option value="Mombasa">Mombasa</option>
-            </select>
-          </div>
         </div>
-      </div>
-
-      {/* HEADER */}
-      <div style={styles.header}>
-        <h2>🚗 Rigid Motors</h2>
 
         {user ? (
-          <button
-            onClick={() => {
-              logout();
-              location.reload();
-            }}
-          >
+          <button onClick={() => logout() || location.reload()}>
             Logout
           </button>
         ) : (
@@ -123,6 +37,21 @@ export default function App() {
             Login
           </button>
         )}
+      </div>
+
+      {/* ===== HERO ===== */}
+      <div style={styles.hero}>
+        <div style={styles.overlay} />
+
+        <div style={styles.heroContent}>
+          <h2 style={styles.heroTitle}>
+            Find Your Dream Car Today
+          </h2>
+
+          <p style={styles.heroSub}>
+            Browse top vehicles across Nairobi & Mombasa
+          </p>
+        </div>
       </div>
 
       {/* LOGIN */}
@@ -145,144 +74,128 @@ export default function App() {
       </div>
 
       {/* CONTENT */}
-      <div style={styles.content}>
-        {tab === "marketplace" && (
-          <>
-            <h3>🔥 Featured Cars</h3>
-            <div style={styles.grid}>
-              {featured.map((car) => (
-                <Card key={car.id} car={car} user={user} featured />
-              ))}
-            </div>
+      <div style={styles.grid}>
+        {cars.map((car) => {
+          const featured = featuredIds.includes(car.id);
 
-            <h3 style={{ marginTop: 30 }}>🚗 All Cars</h3>
-            <div style={styles.grid}>
-              {normal.map((car) => (
-                <Card key={car.id} car={car} user={user} />
-              ))}
-            </div>
-          </>
-        )}
+          return (
+            <div key={car.id} style={styles.card}>
+              <img src={car.image} style={styles.image} />
 
-        {tab === "auctions" && <AuctionPanel />}
+              <h3>{car.title}</h3>
+              <p>KSh {car.price.toLocaleString()}</p>
+              <p>{car.location}</p>
+
+              {featured && <p style={{ color: "gold" }}>⭐ Featured</p>}
+
+              <button style={styles.whatsapp}>
+                Contact Seller
+              </button>
+
+              {user?.role === "dealer" && !featured && (
+                <button
+                  style={styles.feature}
+                  onClick={() => featureCar(car.id)}
+                >
+                  Boost
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
+
+      {tab === "auctions" && <AuctionPanel />}
     </div>
   );
 }
 
-/* CARD */
-function Card({ car, user, featured }) {
-  return (
-    <div style={styles.card}>
-      <img src={car.image} style={styles.image} />
-
-      <h3>{car.title}</h3>
-      <p>KSh {car.price.toLocaleString()}</p>
-      <p style={{ fontSize: 12 }}>{car.location}</p>
-
-      {featured && <p style={{ color: "gold" }}>⭐ Featured</p>}
-
-      <button style={styles.whatsapp}>
-        💬 Contact Seller
-      </button>
-
-      {user?.role === "dealer" && !featured && (
-        <button
-          style={styles.feature}
-          onClick={() => featureCar(car.id)}
-        >
-          🔥 Boost
-        </button>
-      )}
-    </div>
-  );
-}
-
-/* STYLES */
+/* ===== STYLES ===== */
 const styles = {
-  app: {
-    background: "#0b1220",
-    color: "white",
-    fontFamily: "Arial",
+  app: { background: "#0b1220", color: "white" },
+
+  brandBar: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: 20,
+    borderBottom: "1px solid #1f2937",
+  },
+
+  logo: {
+    fontSize: 28,
+    fontWeight: "bold",
+  },
+
+  slogan: {
+    color: "#9ca3af",
   },
 
   hero: {
-    position: "relative",
-    height: "85vh",
+    height: 300,
     backgroundImage:
       "url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7')",
     backgroundSize: "cover",
-    backgroundPosition: "center",
   },
 
   overlay: {
-    position: "absolute",
     width: "100%",
     height: "100%",
-    background: "rgba(0,0,0,0.7)",
+    background: "rgba(0,0,0,0.6)",
   },
 
   heroContent: {
     position: "relative",
+    top: -200,
     textAlign: "center",
-    top: "50%",
-    transform: "translateY(-50%)",
-  },
-
-  topText: {
-    color: "#3b82f6",
-    fontSize: 12,
-    letterSpacing: 2,
   },
 
   heroTitle: {
-    fontSize: 50,
-    fontWeight: "bold",
+    fontSize: 40,
   },
 
   heroSub: {
     color: "#9ca3af",
   },
 
-  heroButtons: {
-    marginTop: 20,
-    display: "flex",
-    justifyContent: "center",
-    gap: 10,
+  grid: {
+    padding: 20,
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
+    gap: 15,
   },
 
-  primaryBtn: {
-    background: "#2563eb",
-    color: "white",
-    padding: 12,
-    border: "none",
-  },
-
-  secondaryBtn: {
-    border: "1px solid white",
-    background: "transparent",
-    color: "white",
-    padding: 12,
-  },
-
-  searchBar: {
-    marginTop: 20,
-    display: "flex",
-    justifyContent: "center",
-    gap: 10,
-    flexWrap: "wrap",
-  },
-
-  input: {
+  card: {
+    background: "#111827",
     padding: 10,
-    borderRadius: 5,
-    border: "none",
+    borderRadius: 10,
   },
 
-  header: {
+  image: {
+    width: "100%",
+    height: 140,
+    objectFit: "cover",
+  },
+
+  whatsapp: {
+    background: "#25D366",
+    width: "100%",
+    padding: 8,
+    border: "none",
+    marginTop: 5,
+  },
+
+  feature: {
+    background: "gold",
+    width: "100%",
+    padding: 8,
+    border: "none",
+    marginTop: 5,
+  },
+
+  tabs: {
     display: "flex",
-    justifyContent: "space-between",
-    padding: 15,
+    gap: 10,
+    padding: 10,
   },
 
   modal: {
@@ -297,49 +210,5 @@ const styles = {
     padding: 20,
     margin: "10% auto",
     width: 300,
-  },
-
-  tabs: {
-    display: "flex",
-    gap: 10,
-    padding: 10,
-  },
-
-  content: {
-    padding: 15,
-  },
-
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))",
-    gap: 10,
-  },
-
-  card: {
-    background: "#111827",
-    padding: 10,
-    borderRadius: 10,
-  },
-
-  image: {
-    width: "100%",
-    height: 120,
-    objectFit: "cover",
-  },
-
-  whatsapp: {
-    background: "#25D366",
-    width: "100%",
-    padding: 8,
-    border: "none",
-    color: "white",
-  },
-
-  feature: {
-    background: "gold",
-    width: "100%",
-    padding: 8,
-    border: "none",
-    marginTop: 5,
   },
 };
