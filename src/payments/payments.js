@@ -21,7 +21,6 @@ export function featureCar(carId) {
   data.transactions.push({
     carId,
     amount: 500,
-    date: new Date().toISOString(),
   });
 
   save(data);
