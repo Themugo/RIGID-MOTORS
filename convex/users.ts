@@ -1,22 +1,20 @@
-import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { query } from "./_generated/server";
 
-export const getByEmail = query({
-  args: { email: v.string() },
-  handler: async (ctx, args) => {
-    return await ctx.db
+export const getCurrentUser = query({
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) return null;
+
+    const email = identity.email;
+
+    if (!email) return null;
+
+    const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("email"), args.email))
-      .unique();
-  },
-});
+      .filter((q) => q.eq(q.field("email"), email))
+      .first();
 
-export const createUser = mutation({
-  args: {
-    email: v.string(),
-    role: v.string(),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.insert("users", args);
+    return user;
   },
 });
