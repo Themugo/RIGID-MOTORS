@@ -14,7 +14,6 @@ export function canPostVehicle(user) {
   return user?.role === "dealer" || user?.role === "admin";
 }
 
-export function hasActiveSubscription(user) {
-  if (!user?.subscriptionEnd) return false;
-  return user.subscriptionEnd > Date.now();
+export function safeRole(user) {
+  return user?.role || "user";
 }
