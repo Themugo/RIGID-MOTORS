@@ -1,19 +1,21 @@
 import { mutation } from "./_generated/server";
 
 /**
- * ⏰ AUTO EXPIRE SUBSCRIPTIONS
+ * ⏰ AUTO EXPIRE SUBSCRIPTIONS (SAFE VERSION)
  */
 export const expireSubscriptions = mutation({
   handler: async (ctx) => {
     const users = await ctx.db.query("users").collect();
 
     for (const user of users) {
-      if (!user.subscriptionEnd) continue;
+      const end = user.subscriptionEnd;
 
-      if (user.subscriptionEnd < Date.now()) {
+      if (typeof end !== "number") continue;
+
+      if (end < Date.now()) {
         await ctx.db.patch(user._id, {
           subscriptionPlan: "none",
-          subscriptionEnd: undefined,
+          subscriptionEnd: 0,
         });
       }
     }
