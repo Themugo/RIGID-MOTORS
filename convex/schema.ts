@@ -19,9 +19,6 @@ export default defineSchema({
     model: v.string(),
     price: v.number(),
     dealerId: v.id("users"),
-
-    isFeatured: v.optional(v.boolean()),
-    featuredUntil: v.optional(v.number()),
     createdAt: v.number(),
   }),
 
