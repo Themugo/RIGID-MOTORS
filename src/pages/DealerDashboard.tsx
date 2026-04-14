@@ -2,13 +2,20 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
 /**
- * 🚗 DEALER DASHBOARD (STABLE VERSION)
+ * 🚗 DEALER DASHBOARD (PRODUCTION SAFE)
  */
 
 export default function DealerDashboard() {
-  const vehicles = useQuery(api.vehicles.listVehicles);
+  let vehicles;
 
-  // ⏳ SAFE LOADING STATE
+  try {
+    vehicles = useQuery(api.vehicles.listVehicles);
+  } catch (err) {
+    console.log("Vehicle fetch error:", err);
+    return <div>Error loading vehicles</div>;
+  }
+
+  // ⏳ SAFE LOADING
   if (!vehicles) {
     return <div style={{ padding: 20 }}>Loading dashboard...</div>;
   }
@@ -17,9 +24,7 @@ export default function DealerDashboard() {
     <div style={{ padding: 20 }}>
       <h1>🚗 Dealer Dashboard</h1>
 
-      {vehicles.length === 0 && (
-        <p>No vehicles found.</p>
-      )}
+      {vehicles.length === 0 && <p>No vehicles found.</p>}
 
       {vehicles.map((vehicle) => (
         <VehicleStatsCard key={vehicle._id} vehicle={vehicle} />
@@ -29,13 +34,19 @@ export default function DealerDashboard() {
 }
 
 /**
- * 📊 VEHICLE STATS CARD
- * SAFE + ISOLATED HOOK USAGE
+ * 📊 VEHICLE STATS CARD (SAFE)
  */
 function VehicleStatsCard({ vehicle }) {
-  const stats = useQuery(api.analytics.getVehicleStats, {
-    vehicleId: vehicle._id,
-  });
+  let stats;
+
+  try {
+    stats = useQuery(api.analytics.getVehicleStats, {
+      vehicleId: vehicle._id,
+    });
+  } catch (err) {
+    console.log("Stats error:", err);
+    return <p>Error loading stats</p>;
+  }
 
   return (
     <div
@@ -48,13 +59,12 @@ function VehicleStatsCard({ vehicle }) {
     >
       <h3>{vehicle.title}</h3>
 
-      {/* ⏳ SAFE LOADING FOR STATS */}
       {!stats ? (
         <p>Loading stats...</p>
       ) : (
         <>
-          <p>👁 Views: {stats.views}</p>
-          <p>💬 WhatsApp Clicks: {stats.clicks}</p>
+          <p>👁 Views: {stats?.views || 0}</p>
+          <p>💬 WhatsApp Clicks: {stats?.clicks || 0}</p>
         </>
       )}
     </div>
