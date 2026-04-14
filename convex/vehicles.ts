@@ -1,42 +1,57 @@
-handler: async (ctx, args) => {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error("Not authenticated");
+import { mutation } from "./_generated/server";
+import { v } from "convex/values";
 
-  const user = await ctx.db
-    .query("users")
-    .filter((q) => q.eq(q.field("email"), identity.email))
-    .first();
+export const createVehicle = mutation({
+  args: {
+    title: v.string(),
+    make: v.string(),
+    model: v.string(),
+    price: v.number(),
+  },
 
-  if (!user) throw new Error("User not found");
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || !identity.email) {
+      throw new Error("Not authenticated");
+    }
 
-  // 🔐 MUST BE DEALER
-  if (user.role !== "dealer" && user.role !== "admin") {
-    throw new Error("Only dealers can post vehicles");
-  }
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), identity.email))
+      .first();
 
-  // 📊 SUBSCRIPTION CHECK
-  const plan = user.subscriptionPlan || "none";
+    if (!user) throw new Error("User not found");
 
-  const limits = {
-    none: 1,
-    basic: 3,
-    pro: 10,
-    premium: 9999,
-  };
+    if (user.role !== "dealer" && user.role !== "admin") {
+      throw new Error("Only dealers can post vehicles");
+    }
 
-  const userVehicles = await ctx.db
-    .query("vehicles")
-    .filter((q) => q.eq(q.field("dealerId"), user._id))
-    .collect();
+    const plan = user.subscriptionPlan || "none";
 
-  if (userVehicles.length >= limits[plan]) {
-    throw new Error("Upgrade subscription to post more vehicles");
-  }
+    const limits: Record<string, number> = {
+      none: 1,
+      basic: 3,
+      pro: 10,
+      premium: 9999,
+    };
 
-  return await ctx.db.insert("vehicles", {
-    ...args,
-    dealerId: user._id,
-    isFeatured: false,
-    createdAt: Date.now(),
-  });
-}
+    const userVehicles = await ctx.db
+      .query("vehicles")
+      .filter((q) => q.eq(q.field("dealerId"), user._id))
+      .collect();
+
+    if (userVehicles.length >= limits[plan]) {
+      throw new Error("Upgrade subscription to post more vehicles");
+    }
+
+    return await ctx.db.insert("vehicles", {
+      title: args.title,
+      make: args.make,
+      model: args.model,
+      price: args.price,
+      dealerId: user._id,
+      isFeatured: false,
+      createdAt: Date.now(),
+    });
+  },
+});
