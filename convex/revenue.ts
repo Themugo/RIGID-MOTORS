@@ -1,7 +1,7 @@
 import { query } from "./_generated/server";
 
 /**
- * 💰 REVENUE STATS (SAFE)
+ * 💰 REVENUE STATS
  */
 export const getRevenueStats = query({
   handler: async (ctx) => {
