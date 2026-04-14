@@ -7,9 +7,10 @@ export const expireSubscriptions = mutation({
     for (const user of users) {
       const end = user.subscriptionEnd;
 
+      // ✅ strict numeric check
       if (typeof end !== "number") continue;
 
-      if (end < Date.now()) {
+      if (end > 0 && end < Date.now()) {
         await ctx.db.patch(user._id, {
           subscriptionPlan: "none",
           subscriptionEnd: 0,
