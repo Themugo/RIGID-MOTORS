@@ -1,6 +1,9 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+/**
+ * 🚗 CREATE VEHICLE (SAFE)
+ */
 export const createVehicle = mutation({
   args: {
     title: v.string(),
@@ -26,32 +29,19 @@ export const createVehicle = mutation({
       throw new Error("Only dealers can post vehicles");
     }
 
-    const plan = user.subscriptionPlan || "none";
-
-    const limits: Record<string, number> = {
-      none: 1,
-      basic: 3,
-      pro: 10,
-      premium: 9999,
-    };
-
-    const userVehicles = await ctx.db
-      .query("vehicles")
-      .filter((q) => q.eq(q.field("dealerId"), user._id))
-      .collect();
-
-    if (userVehicles.length >= limits[plan]) {
-      throw new Error("Upgrade subscription to post more vehicles");
-    }
-
     return await ctx.db.insert("vehicles", {
-      title: args.title,
-      make: args.make,
-      model: args.model,
-      price: args.price,
+      ...args,
       dealerId: user._id,
-      isFeatured: false,
       createdAt: Date.now(),
     });
+  },
+});
+
+/**
+ * 🚗 LIST VEHICLES
+ */
+export const listVehicles = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("vehicles").collect();
   },
 });
