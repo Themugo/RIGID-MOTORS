@@ -10,10 +10,4 @@ export default defineSchema({
     price: v.number(),
     imageUrl: v.optional(v.string()),
   }),
-
-  users: defineTable({
-    name: v.string(),
-    email: v.string(),
-    role: v.string(),
-  }),
 });
