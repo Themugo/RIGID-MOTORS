@@ -2,15 +2,12 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+
   users: defineTable({
     name: v.string(),
     email: v.string(),
     role: v.string(),
     createdAt: v.number(),
-
-    subscriptionPlan: v.optional(v.string()),
-    subscriptionEnd: v.optional(v.number()),
-    phone: v.optional(v.string()),
   }),
 
   vehicles: defineTable({
@@ -18,29 +15,14 @@ export default defineSchema({
     make: v.string(),
     model: v.string(),
     price: v.number(),
-    dealerId: v.id("users"),
-    createdAt: v.number(),
+
+    // ✅ MAKE THESE OPTIONAL (FIX)
+    dealerId: v.optional(v.id("users")),
+    createdAt: v.optional(v.number()),
+
+    // ✅ ADD YOUR EXISTING FIELDS
+    year: v.optional(v.number()),
+    image: v.optional(v.string()),
   }),
 
-  analytics: defineTable({
-    vehicleId: v.id("vehicles"),
-    views: v.number(),
-    clicks: v.number(),
-  }),
-
-  payments: defineTable({
-    userId: v.id("users"),
-    phone: v.string(),
-    amount: v.number(),
-    type: v.string(),
-    status: v.string(),
-    mpesaReceipt: v.optional(v.string()),
-    createdAt: v.number(),
-  }),
-
-  featuredAds: defineTable({
-    vehicleId: v.id("vehicles"),
-    startDate: v.number(),
-    endDate: v.number(),
-  }),
 });
