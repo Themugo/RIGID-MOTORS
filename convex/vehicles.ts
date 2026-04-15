@@ -2,7 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
- * ✅ GET ALL VEHICLES (FOR YOUR MARKETPLACE UI)
+ * GET ALL VEHICLES
  */
 export const getVehicles = query({
   handler: async (ctx) => {
@@ -11,7 +11,7 @@ export const getVehicles = query({
 });
 
 /**
- * ➕ ADD NEW VEHICLE (ADMIN / FORM USE LATER)
+ * ADD VEHICLE (for testing or admin use)
  */
 export const addVehicle = mutation({
   args: {
@@ -22,15 +22,7 @@ export const addVehicle = mutation({
     price: v.number(),
     imageUrl: v.optional(v.string()),
   },
-
   handler: async (ctx, args) => {
-    return await ctx.db.insert("vehicles", {
-      title: args.title,
-      make: args.make,
-      model: args.model,
-      year: args.year,
-      price: args.price,
-      imageUrl: args.imageUrl,
-    });
+    return await ctx.db.insert("vehicles", args);
   },
 });
