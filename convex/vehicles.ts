@@ -1,9 +1,12 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-/**
- * 🚗 CREATE VEHICLE (SAFE)
- */
+export const listVehicles = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("vehicles").collect();
+  },
+});
+
 export const createVehicle = mutation({
   args: {
     title: v.string(),
@@ -14,9 +17,7 @@ export const createVehicle = mutation({
 
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("Not authenticated");
-    }
+    if (!identity || !identity.email) throw new Error("Not authenticated");
 
     const user = await ctx.db
       .query("users")
@@ -25,23 +26,10 @@ export const createVehicle = mutation({
 
     if (!user) throw new Error("User not found");
 
-    if (user.role !== "dealer" && user.role !== "admin") {
-      throw new Error("Only dealers can post vehicles");
-    }
-
     return await ctx.db.insert("vehicles", {
       ...args,
       dealerId: user._id,
       createdAt: Date.now(),
     });
-  },
-});
-
-/**
- * 🚗 LIST VEHICLES
- */
-export const listVehicles = query({
-  handler: async (ctx) => {
-    return await ctx.db.query("vehicles").collect();
   },
 });
