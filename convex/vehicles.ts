@@ -1,6 +1,6 @@
 import { query } from "./_generated/server";
 
-export const listVehicles = query({
+export const getVehicles = query({
   handler: async () => {
     return [
       {
