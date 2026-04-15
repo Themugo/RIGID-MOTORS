@@ -9,9 +9,6 @@ export default defineSchema({
     year: v.number(),
     price: v.number(),
     imageUrl: v.optional(v.string()),
-    fuel: v.optional(v.string()),
-    transmission: v.optional(v.string()),
-    location: v.optional(v.string()),
   }),
 
   users: defineTable({
