@@ -2,6 +2,8 @@ import FeaturedBadge from "./FeaturedBadge";
 import BoostButton from "./BoostButton";
 
 export default function VehicleCard({ vehicle }) {
+  if (!vehicle) return null;
+
   return (
     <div style={{ border: "1px solid #ccc", padding: 12 }}>
       <FeaturedBadge vehicle={vehicle} />
