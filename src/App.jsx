@@ -1,19 +1,16 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+<div className="max-w-6xl mx-auto p-6">
+  
+  {/* HEADER */}
+  <h1 className="text-3xl font-bold text-center mb-8">
+    🚗 Rigid Motors Marketplace
+  </h1>
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import DealerDashboard from "./pages/DealerDashboard";
+  {/* GRID */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    
+    {vehicles.map((vehicle) => (
+      <VehicleCard key={vehicle._id} vehicle={vehicle} />
+    ))}
 
-export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/dealer" element={<DealerDashboard />} />
-
-      </Routes>
-    </BrowserRouter>
-  );
-}
+  </div>
+</div>
